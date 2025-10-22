@@ -8,6 +8,7 @@ from lib.ledsettings import LedSettings
 from lib.ledstrip import LedStrip
 from lib.log_setup import logger
 from lib.menulcd import MenuLCD
+from lib.mqtt_client import MQTTClient
 from lib.midiports import MidiPorts
 from lib.platform import PlatformRasp, PlatformNull, Hotspot
 from lib.savemidi import SaveMIDI
@@ -25,6 +26,7 @@ class ComponentInitializer:
         self.learning = LearnMIDI(self.usersettings, self.ledsettings, self.midiports, self.ledstrip)
         self.hotspot = Hotspot(self.platform)
         self.saving = SaveMIDI()
+        self.mqtt_client = MQTTClient(self.usersettings)
         self.menu = MenuLCD("config/menu.xml", self.args, self.usersettings, self.ledsettings,
                             self.ledstrip, self.learning, self.saving, self.midiports,
                             self.hotspot, self.platform)
