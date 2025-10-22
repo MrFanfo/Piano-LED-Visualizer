@@ -10,7 +10,7 @@ class MIDIEventProcessor:
     """
     Processes MIDI events and translates them into LED strip visualizations.
     """
-    def __init__(self, midiports, ledstrip, ledsettings, usersettings, saving, learning, menu, color_mode):
+    def __init__(self, midiports, ledstrip, ledsettings, usersettings, saving, learning, menu, color_mode, mqtt_client=None):
 
         self.midiports = midiports
         self.ledstrip = ledstrip
@@ -20,9 +20,11 @@ class MIDIEventProcessor:
         self.learning = learning
         self.menu = menu
         self.color_mode = color_mode
+        self.mqtt_client = mqtt_client
         self.last_sustain = 0  # Track sustain pedal state
         # Time tracking for sequence advancement to prevent rapid triggering
         self.last_sequence_advance = 0
+        self._processing_live_input = False
 
     def process_midi_events(self):
         """
@@ -34,9 +36,11 @@ class MIDIEventProcessor:
         if len(self.saving.is_playing_midi) == 0 and self.learning.is_started_midi is False:
             # Process live MIDI input
             self.midiports.midipending = self.midiports.midi_queue
+            self._processing_live_input = True
         else:
             # Process MIDI file playback
             self.midiports.midipending = self.midiports.midifile_queue
+            self._processing_live_input = False
 
         # Process all pending MIDI messages
         while self.midiports.midipending:
@@ -76,6 +80,9 @@ class MIDIEventProcessor:
 
             # Restart recording timer if recording
             self.saving.restart_time()
+
+        # Reset the live input flag once processing is complete
+        self._processing_live_input = False
 
     def handle_note_off(self, msg, msg_timestamp, note_position):
         """
@@ -132,6 +139,8 @@ class MIDIEventProcessor:
         # Record the note-off event if recording is active
         if self.saving.is_recording:
             self.saving.add_track("note_off", msg.note, velocity, msg_timestamp)
+
+        self._publish_note_event(msg, "note_off")
 
     def handle_note_on(self, msg, msg_timestamp, note_position):
         """
@@ -212,6 +221,24 @@ class MIDIEventProcessor:
                                       wc.rgb_to_hex((red, green, blue)))
             else:
                 self.saving.add_track("note_on", msg.note, velocity, msg_timestamp)
+
+        self._publish_note_event(msg, "note_on")
+
+    def _publish_note_event(self, msg, event_type):
+        if self.mqtt_client is None or not self._processing_live_input:
+            return
+
+        note = getattr(msg, "note", None)
+        if note is None:
+            return
+
+        velocity = getattr(msg, "velocity", 0)
+        channel = getattr(msg, "channel", None)
+
+        try:
+            self.mqtt_client.publish_note_event(note, velocity, event_type, channel)
+        except Exception as exc:
+            logger.warning(f"Failed to publish MQTT note event: {exc}")
 
     def handle_control_change(self, msg, msg_timestamp):
         """

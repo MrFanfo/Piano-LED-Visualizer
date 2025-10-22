@@ -132,4 +132,15 @@
     <web_listen_ip></web_listen_ip>
     <web_listen_port></web_listen_port>
 
+    <mqtt_enabled>0</mqtt_enabled>
+    <mqtt_host>192.168.1.27</mqtt_host>
+    <mqtt_port>1883</mqtt_port>
+    <mqtt_topic>piano/keys</mqtt_topic>
+    <mqtt_username>mqttuser</mqtt_username>
+    <mqtt_password>Fanfo1122</mqtt_password>
+    <mqtt_client_id>piano-led-visualizer</mqtt_client_id>
+    <mqtt_keepalive>60</mqtt_keepalive>
+    <mqtt_qos>0</mqtt_qos>
+    <mqtt_retain>0</mqtt_retain>
+
 </settings>

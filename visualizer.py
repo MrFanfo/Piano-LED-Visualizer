@@ -70,7 +70,8 @@ class VisualizerApp:
                                                        self.component_initializer.saving,
                                                        self.component_initializer.learning,
                                                        self.component_initializer.menu,
-                                                       self.color_mode)
+                                                       self.color_mode,
+                                                       self.component_initializer.mqtt_client)
         self.led_effects_processor = LEDEffectsProcessor(self.component_initializer.ledstrip,
                                                          self.component_initializer.ledsettings,
                                                          self.component_initializer.menu,
@@ -93,6 +94,11 @@ class VisualizerApp:
         # Turn off all LEDs before shutting down
         stop_animations(self.component_initializer.menu)
         fastColorWipe(self.component_initializer.ledstrip.strip, True, self.component_initializer.ledsettings)
+        if hasattr(self.component_initializer, "mqtt_client") and self.component_initializer.mqtt_client is not None:
+            try:
+                self.component_initializer.mqtt_client.shutdown()
+            except Exception as exc:
+                logger.warning(f"Error while shutting down MQTT client: {exc}")
         sys.exit(0)
     
     def ensure_singleton(self):
